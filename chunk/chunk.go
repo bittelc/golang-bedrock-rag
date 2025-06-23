@@ -5,12 +5,11 @@ import (
 	"os"
 	"strings"
 
-	"github.com/gabriel-vasile/mimetype"
-	"github.com/lu4p/cat/docxtxt"
-
 	// "github.com/unidoc/unioffice/document"
 	"github.com/srinathh/gooxml/document"
 )
+
+const embeddingVectorSize = 500
 
 type chunkDoc struct {
 	path   string
@@ -19,29 +18,20 @@ type chunkDoc struct {
 	chunks []string
 }
 
-func ChunkDoc(path string) error {
+func ChunkDoc(path string) (*chunkDoc, error) {
 	var doc chunkDoc
-	var err error
 	doc.path = path
-	err = doc.extractAllTextWithForekdUniDoc()
+	err := doc.extractAllText()
 	if err != nil {
-		return fmt.Errorf("couldn't chunk document at path %v, %v", path, err)
+		return &doc, fmt.Errorf("couldn't chunk document at path %v, %v", path, err)
 	}
-	fmt.Println("extracted text:", doc.text)
-	return nil
+
+	err = doc.chunkText()
+
+	return &doc, nil
 }
 
-// func (doc *chunkDoc) extractAllTextWithUniDoc() error {
-// 	uniDoc, err := document.Open(doc.path)
-// 	if err != nil {
-// 		return fmt.Errorf("could not extract text from doc, %v", err)
-// 	}
-// 	defer uniDoc.Close()
-// 	doc.text = uniDoc.ExtractText().Text()
-// 	return nil
-// }
-
-func (d *chunkDoc) extractAllTextWithForekdUniDoc() error {
+func (d *chunkDoc) extractAllText() error {
 	// Open the file
 	file, err := os.Open(d.path)
 	if err != nil {
@@ -73,34 +63,19 @@ func (d *chunkDoc) extractAllTextWithForekdUniDoc() error {
 
 	// Store the extracted text
 	d.text = textBuilder.String()
-
 	return nil
 }
 
-func (doc *chunkDoc) extractAllTextWithCatDoc() error {
-	content, err := os.ReadFile(doc.path)
-	if err != nil {
-		return fmt.Errorf("could not detect mime type, %v", err)
+func (d *chunkDoc) chunkText() error {
+	words := strings.Fields(d.text)
+	var chunks []string
+	for i := 0; i < len(words); i += embeddingVectorSize {
+		end := i + embeddingVectorSize
+		if end > len(words) {
+			end = len(words)
+		}
+		chunks = append(chunks, strings.Join(words[i:end], " "))
 	}
-	mime := mimetype.Detect(content)
-	fmt.Println("cat will process this doc as mimetype:", mime.String())
-	txt, err := docxtxt.ToStr(doc.path)
-	if err != nil {
-		return fmt.Errorf("could not extract text from doc, %v", err)
-	}
-	doc.text = txt
-	return nil
-}
-
-func (doc *chunkDoc) extractAllTextWithCatTryDifferentWay() error {
-	f, err := os.Open(doc.path)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-	doc.text, err = docxtxt.ToStr(doc.path)
-	if err != nil {
-		return err
-	}
+	d.chunks = chunks
 	return nil
 }
