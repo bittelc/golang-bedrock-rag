@@ -30,6 +30,12 @@ func main() {
 		log.Fatalf("could not auth to AWS: %v", err)
 	}
 
+	err = chunk.ChunkDoc(args.Filename)
+	if err != nil {
+		log.Fatalf("could not chunk document: %v", err)
+	}
+	return
+
 	bedrockClient := bedrock.NewFromConfig(cfg)
 	result, err := bedrockClient.ListFoundationModels(ctx, &bedrock.ListFoundationModelsInput{})
 	if err != nil {
@@ -41,10 +47,5 @@ func main() {
 	}
 	for _, modelSummary := range result.ModelSummaries {
 		fmt.Println(*modelSummary.ModelId)
-	}
-	// err = chunk.ChunkDoc("data/short-test-text.docx")
-	err = chunk.ChunkDoc(args.Filename)
-	if err != nil {
-		log.Fatalf("could not chunk document: %v", err)
 	}
 }
