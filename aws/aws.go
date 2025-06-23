@@ -30,7 +30,7 @@ func AuthToAws(ctx *context.Context) (awsDep.Config, error) {
 	if _, err := sts.NewFromConfig(cfg).GetCallerIdentity(*ctx, &sts.GetCallerIdentityInput{}); err != nil {
 		log.Fatalf("AWS authentication failed: %v", err)
 	} else {
-		log.Println("✅ AWS authentication successful")
+		log.Println("AWS authentication successful")
 	}
 	return cfg, nil
 }
