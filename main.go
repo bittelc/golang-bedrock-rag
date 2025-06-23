@@ -7,6 +7,7 @@ import (
 
 	"golang-bedrock-rag/aws"
 	"golang-bedrock-rag/chunk"
+	"golang-bedrock-rag/cli"
 
 	"github.com/aws/aws-sdk-go-v2/service/bedrock"
 )
@@ -18,6 +19,11 @@ const (
 )
 
 func main() {
+	args, err := cli.GetUserArgs()
+	if err != nil {
+		log.Fatalf("could not get user args: %v", err)
+	}
+
 	ctx := context.Background()
 	cfg, err := aws.AuthToAws(&ctx)
 	if err != nil {
@@ -36,7 +42,8 @@ func main() {
 	for _, modelSummary := range result.ModelSummaries {
 		fmt.Println(*modelSummary.ModelId)
 	}
-	err = chunk.ChunkDoc("/Users/bittelc/workspace/golang-bedrock-rag/data/short-test-text.docx")
+	// err = chunk.ChunkDoc("data/short-test-text.docx")
+	err = chunk.ChunkDoc(args.Filename)
 	if err != nil {
 		log.Fatalf("could not chunk document: %v", err)
 	}

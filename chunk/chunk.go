@@ -4,7 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/lu4p/cat"
+	"github.com/gabriel-vasile/mimetype"
+	"github.com/lu4p/cat/docxtxt"
 	"github.com/unidoc/unioffice/document"
 )
 
@@ -34,7 +35,7 @@ func ChunkDoc(path string) error {
 func (doc *chunkedDoc) extractAllTextWithUniDoc() error {
 	uniDoc, err := document.Open(doc.path)
 	if err != nil {
-		return fmt.Errorf("could not extract text from doc, ", err)
+		return fmt.Errorf("could not extract text from doc, %v", err)
 	}
 	defer uniDoc.Close()
 	doc.text = uniDoc.ExtractText().Text()
@@ -42,7 +43,13 @@ func (doc *chunkedDoc) extractAllTextWithUniDoc() error {
 }
 
 func (doc *chunkedDoc) extractAllTextWithCatDoc() error {
-	txt, err := cat.File(doc.path)
+	content, err := os.ReadFile(doc.path)
+	if err != nil {
+		return fmt.Errorf("could not detect mime type, %v", err)
+	}
+	mime := mimetype.Detect(content)
+	fmt.Println("cat will process this doc as mimetype:", mime.String())
+	txt, err := docxtxt.ToStr(doc.path)
 	if err != nil {
 		return fmt.Errorf("could not extract text from doc, %v", err)
 	}
